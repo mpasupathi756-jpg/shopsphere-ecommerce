@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { ArrowLeft, PackageCheck, Truck } from 'lucide-react'
+import { ArrowLeft, Truck } from 'lucide-react'
 import { useAuth } from '../auth/AuthContext'
 import { ordersApi } from '../lib/api'
 import { formatINR } from '../components/ProductCard'
