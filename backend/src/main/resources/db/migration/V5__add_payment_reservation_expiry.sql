@@ -1,0 +1,2 @@
+ALTER TABLE orders ADD COLUMN expires_at TIMESTAMPTZ;
+CREATE INDEX idx_orders_payment_expiry ON orders(status, expires_at) WHERE status = 'PAYMENT_PENDING';
