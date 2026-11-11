@@ -1,0 +1,5 @@
+import { ArrowUpRight, Store } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import type { ProductCard as ProductCardData } from '../lib/api'
+export function formatINR(minor:number){return new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format(minor/100)}
+export default function ProductCard({product}:{product:ProductCardData}){return <article className="catalog-product-card"><Link to={'/products/'+product.slug} className="catalog-product-image"><span>{product.categoryName}</span><b>{product.title.slice(0,1).toUpperCase()}</b></Link><div className="catalog-product-copy"><small>{product.brandName??product.categoryName}</small><Link to={'/products/'+product.slug}><h3>{product.title}</h3></Link><strong>From {formatINR(product.startingPriceMinor)}</strong><span><Store size={13}/> {product.sellerCount} {product.sellerCount===1?'seller':'sellers'}</span></div><Link className="product-arrow" to={'/products/'+product.slug} aria-label={'View '+product.title}><ArrowUpRight size={17}/></Link></article>}
