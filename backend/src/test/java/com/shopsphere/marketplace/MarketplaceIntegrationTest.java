@@ -112,6 +112,11 @@ class MarketplaceIntegrationTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.orderNumber").value(orderNumber));
         mvc.perform(post("/api/v1/payments/mock/" + orderNumber + "/success").header("Authorization", "Bearer " + buyerToken))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("PAID"));
+        mvc.perform(get("/api/v1/products/" + slug + "/reviews/eligibility").header("Authorization", "Bearer " + buyerToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.eligible").value(false));
+        mvc.perform(post("/api/v1/products/" + slug + "/reviews").header("Authorization", "Bearer " + buyerToken).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"rating\":5,\"title\":\"Great laptop\",\"body\":\"Fast and reliable for development.\"}"))
+                .andExpect(status().isForbidden());
         MvcResult sellerOrdersResult = mvc.perform(get("/api/v1/seller/orders").header("Authorization", "Bearer " + sellerToken))
                 .andExpect(status().isOk()).andReturn();
         String sellerOrderId = mapper.readTree(sellerOrdersResult.getResponse().getContentAsString()).get(0).get("sellerOrderId").asText();
@@ -126,11 +131,6 @@ class MarketplaceIntegrationTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("DELIVERED"));
         mvc.perform(get("/api/v1/catalog/products/" + slug)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.offers[0].availableQuantity").value(3));
-        mvc.perform(get("/api/v1/products/" + slug + "/reviews/eligibility").header("Authorization", "Bearer " + buyerToken))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.eligible").value(false));
-        mvc.perform(post("/api/v1/products/" + slug + "/reviews").header("Authorization", "Bearer " + buyerToken).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"rating\":5,\"title\":\"Great laptop\",\"body\":\"Fast and reliable for development.\"}"))
-                .andExpect(status().isForbidden());
 
         mvc.perform(get("/api/v1/products/" + slug + "/reviews/eligibility").header("Authorization", "Bearer " + buyerToken))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.eligible").value(true));
