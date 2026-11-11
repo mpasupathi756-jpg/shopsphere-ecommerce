@@ -1,15 +1,17 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api/v1'
 let accessToken: string | null = null
 let csrfToken: string | null = null
+let csrfFetchedAt = 0
 export type UserProfile = { id: string; email: string; displayName: string; roles: string[]; emailVerified: boolean }
 export type AuthResponse = { accessToken: string; tokenType: string; expiresIn: number; user: UserProfile }
 export function setAccessToken(token: string | null) { accessToken = token }
 async function ensureCsrf(): Promise<string> {
-  if (csrfToken) return csrfToken
+  if (csrfToken && Date.now() - csrfFetchedAt < 45 * 60 * 1000) return csrfToken
   const response = await fetch(`${API_BASE}/auth/csrf`, { credentials: 'include' })
   if (!response.ok) throw new Error('Unable to start a secure session. Please retry.')
   const data = await response.json() as { csrfToken: string }
   csrfToken = data.csrfToken
+  csrfFetchedAt = Date.now()
   return csrfToken
 }
 async function send<T>(path: string, options: RequestInit = {}, retry = true): Promise<T> {
@@ -41,6 +43,6 @@ export async function restoreSession(): Promise<UserProfile> {
 export const authApi = {
   async register(input: { displayName: string; email: string; password: string }) { const data = await send<AuthResponse>('/auth/register', { method: 'POST', body: JSON.stringify(input) }, false); setAccessToken(data.accessToken); return data.user },
   async login(input: { email: string; password: string }) { const data = await send<AuthResponse>('/auth/login', { method: 'POST', body: JSON.stringify(input) }, false); setAccessToken(data.accessToken); return data.user },
-  async logout() { try { await send<void>('/auth/logout', { method: 'POST', body: '{}' }, false) } finally { setAccessToken(null); csrfToken = null } },
+  async logout() { try { await send<void>('/auth/logout', { method: 'POST', body: '{}' }, false) } finally { setAccessToken(null); csrfToken = null; csrfFetchedAt = 0 } },
   async me() { return send<UserProfile>('/auth/me') },
 }
