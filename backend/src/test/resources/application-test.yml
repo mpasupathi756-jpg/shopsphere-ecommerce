@@ -18,6 +18,9 @@ spring:
       mode: always
       data-locations: classpath:data-test.sql
 app:
+  security:
+    jwt:
+      secret-base64: VGVzdFNob3BTcGhlcmVTZWNyZXRLZXlGb3JUZXN0aW5nMDAx
   bootstrap:
     admin:
       email: admin@example.com

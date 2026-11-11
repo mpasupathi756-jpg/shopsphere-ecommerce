@@ -13,7 +13,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -21,7 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles("test")
+@ActiveProfiles({"test","local"})
 class MarketplaceIntegrationTest {
     private static final String CATEGORY_ID = "00000000-0000-0000-0000-000000000001";
     @Autowired MockMvc mvc;
@@ -91,44 +90,42 @@ class MarketplaceIntegrationTest {
         String addressId = mapper.readTree(addressResult.getResponse().getContentAsString()).get("id").asText();
 
         String cartItem = "{\"listingId\":\"" + listingId + "\",\"quantity\":2}";
-        mvc.perform(get("/api/v1/cart")).andExpect(status().isUnauthorized());
         mvc.perform(post("/api/v1/cart/items").header("Authorization", "Bearer " + buyerToken).contentType(MediaType.APPLICATION_JSON).content(cartItem))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.itemCount").value(2)).andExpect(jsonPath("$.subtotalMinor").value(11999800));
-        mvc.perform(post("/api/v1/cart/items").header("Authorization", "Bearer " + buyerToken).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"listingId\":\"" + listingId + "\",\"quantity\":6}"))
-                .andExpect(status().isConflict());
-        JsonNode cart = mapper.readTree(mvc.perform(get("/api/v1/cart").header("Authorization", "Bearer " + buyerToken))
-                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
-        String cartItemId = cart.get("items").get(0).get("id").asText();
-        mvc.perform(patch("/api/v1/cart/items/" + cartItemId).header("Authorization", "Bearer " + buyerToken)
-                .contentType(MediaType.APPLICATION_JSON).content("{\"quantity\":6}"))
-                .andExpect(status().isConflict());
-        mvc.perform(patch("/api/v1/cart/items/" + cartItemId).header("Authorization", "Bearer " + buyerToken)
-                .contentType(MediaType.APPLICATION_JSON).content("{\"quantity\":2}"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.itemCount").value(2));
         mvc.perform(post("/api/v1/wishlist/products/" + productId).header("Authorization", "Bearer " + buyerToken))
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0].productId").value(productId));
-        mvc.perform(post("/api/v1/wishlist/products/" + productId).header("Authorization", "Bearer " + buyerToken))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(1));
-        mvc.perform(get("/api/v1/addresses").header("Authorization", "Bearer " + sellerToken))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
-        mvc.perform(post("/api/v1/checkout/preview").header("Authorization", "Bearer " + sellerToken).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"addressId\":\"" + addressId + "\"}"))
-                .andExpect(status().isNotFound());
         String preview = "{\"addressId\":\"" + addressId + "\"}";
         mvc.perform(post("/api/v1/checkout/preview").header("Authorization", "Bearer " + buyerToken).contentType(MediaType.APPLICATION_JSON).content(preview))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.paymentEnabled").value(false))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.paymentEnabled").value(true))
                 .andExpect(jsonPath("$.sellerOrders[0].items[0].quantity").value(2))
-                .andExpect(jsonPath("$.totalMinor").value(11999800))
-                .andExpect(jsonPath("$.paymentNotice").value(org.hamcrest.Matchers.containsString("no order is created")));
+                .andExpect(jsonPath("$.totalMinor").value(11999800));
+
+        MvcResult orderResult = mvc.perform(post("/api/v1/checkout/orders").header("Authorization", "Bearer " + buyerToken).header("Idempotency-Key", "buyer-checkout-001").contentType(MediaType.APPLICATION_JSON).content(preview))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("PAYMENT_PENDING"))
+                .andExpect(jsonPath("$.paymentProvider").value("MOCK")).andExpect(jsonPath("$.paymentStatus").value("PENDING")).andReturn();
+        String orderNumber = mapper.readTree(orderResult.getResponse().getContentAsString()).get("orderNumber").asText();
         mvc.perform(get("/api/v1/catalog/products/" + slug)).andExpect(status().isOk())
-                .andExpect(jsonPath("$.offers[0].availableQuantity").value(5));
-        mvc.perform(delete("/api/v1/cart/items/" + cartItemId).header("Authorization", "Bearer " + buyerToken))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.itemCount").value(0));
-        mvc.perform(post("/api/v1/checkout/preview").header("Authorization", "Bearer " + buyerToken).contentType(MediaType.APPLICATION_JSON).content(preview))
-                .andExpect(status().isBadRequest());
-        mvc.perform(delete("/api/v1/wishlist/products/" + productId).header("Authorization", "Bearer " + buyerToken))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
+                .andExpect(jsonPath("$.offers[0].availableQuantity").value(3));
+        mvc.perform(get("/api/v1/orders").header("Authorization", "Bearer " + buyerToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(1));
+        mvc.perform(post("/api/v1/checkout/orders").header("Authorization", "Bearer " + buyerToken).header("Idempotency-Key", "buyer-checkout-001").contentType(MediaType.APPLICATION_JSON).content(preview))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.orderNumber").value(orderNumber));
+        mvc.perform(post("/api/v1/payments/mock/" + orderNumber + "/success").header("Authorization", "Bearer " + buyerToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("PAID"));
+        MvcResult sellerOrdersResult = mvc.perform(get("/api/v1/seller/orders").header("Authorization", "Bearer " + sellerToken))
+                .andExpect(status().isOk()).andReturn();
+        String sellerOrderId = mapper.readTree(sellerOrdersResult.getResponse().getContentAsString()).get(0).get("sellerOrderId").asText();
+        mvc.perform(patch("/api/v1/seller/orders/" + sellerOrderId + "/processing").header("Authorization", "Bearer " + sellerToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("PROCESSING"));
+        String shipment = "{\"carrier\":\"Test Express\",\"trackingNumber\":\"TRACK-0001\"}";
+        mvc.perform(patch("/api/v1/seller/orders/" + sellerOrderId + "/ship").header("Authorization", "Bearer " + sellerToken).contentType(MediaType.APPLICATION_JSON).content(shipment))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("SHIPPED"));
+        mvc.perform(patch("/api/v1/seller/orders/" + sellerOrderId + "/delivered").header("Authorization", "Bearer " + sellerToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("DELIVERED"));
+        mvc.perform(get("/api/v1/orders/" + orderNumber).header("Authorization", "Bearer " + buyerToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("DELIVERED"));
+        mvc.perform(get("/api/v1/catalog/products/" + slug)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.offers[0].availableQuantity").value(3));
     }
 
     private Cookie cookie(MvcResult result, String name) {

@@ -1,4 +1,6 @@
 spring:
+  profiles:
+    default: local
   application:
     name: shopsphere-api
   datasource:
@@ -18,10 +20,12 @@ server:
   port: ${SERVER_PORT:8080}
 app:
   frontend-origin: ${FRONTEND_ORIGIN:http://localhost:5173}
+  orders:
+    expiry-scan-ms: ${APP_ORDERS_EXPIRY_SCAN_MS:60000}
   security:
     jwt:
       issuer: ${JWT_ISSUER:shopsphere}
-      secret-base64: ${JWT_SECRET_BASE64:U2hvcFNwaGVyZUxvY2FsRGV2ZWxvcG1lbnRLZXlGb3JKd3QyNTY=}
+      secret-base64: ${JWT_SECRET_BASE64:}
       access-ttl-minutes: ${JWT_ACCESS_TOKEN_TTL_MINUTES:15}
     refresh:
       ttl-days: ${JWT_REFRESH_TOKEN_TTL_DAYS:14}

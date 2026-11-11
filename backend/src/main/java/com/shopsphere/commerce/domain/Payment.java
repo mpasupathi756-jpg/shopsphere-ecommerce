@@ -18,5 +18,5 @@ public class Payment {
  protected Payment(){}
  public Payment(CustomerOrder order,long amount,String currency,String key){this.order=order;this.amountMinor=amount;this.currency=currency;this.idempotencyKey=key;}
  @PrePersist void onCreate(){createdAt=Instant.now();updatedAt=createdAt;} @PreUpdate void onUpdate(){updatedAt=Instant.now();}
- public UUID getId(){return id;} public String getStatus(){return status;}
+ public UUID getId(){return id;} public CustomerOrder getOrder(){return order;} public String getProvider(){return provider;} public String getProviderReference(){return providerReference;} public String getIdempotencyKey(){return idempotencyKey;} public String getStatus(){return status;} public long getAmountMinor(){return amountMinor;} public String getCurrency(){return currency;} public void markPending(String providerName,String reference){provider=providerName;providerReference=reference;status="PENDING";} public void markCaptured(){if(!"PENDING".equals(status))throw new IllegalStateException("Payment is not pending");status="CAPTURED";} public void markFailed(){if(!"PENDING".equals(status))throw new IllegalStateException("Payment is not pending");status="FAILED";} public void cancel(){if("PENDING".equals(status))status="CANCELLED";}
 }
