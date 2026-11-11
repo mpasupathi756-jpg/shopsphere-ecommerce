@@ -25,6 +25,13 @@ public class ProductReviewService {
  private final OrderItemRepository orderItems;
  public ProductReviewService(ProductReviewRepository reviews,ProductReviewReportRepository reports,ProductRepository products,UserAccountRepository users,OrderItemRepository orderItems){this.reviews=reviews;this.reports=reports;this.products=products;this.users=users;this.orderItems=orderItems;}
 
+ @Transactional(readOnly=true)
+ public ReviewEligibilityResponse eligibility(UUID customerId,String slug){
+  activeUser(customerId); Product product=activeProduct(slug);
+  boolean already=reviews.existsByCustomer_IdAndProduct_Id(customerId,product.getId());
+  boolean delivered=!orderItems.findDeliveredPurchaseForReview(customerId,slug).isEmpty();
+  return new ReviewEligibilityResponse(delivered&&!already,already,already?\"You have already reviewed this product\":delivered?\"You can review this delivered purchase\":\"A delivered purchase is required before reviewing\");
+ }
  @Transactional
  public ReviewResponse create(UUID customerId,String slug,ReviewRequest request){
   UserAccount customer=activeUser(customerId);
