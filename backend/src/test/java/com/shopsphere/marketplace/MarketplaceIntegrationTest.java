@@ -78,6 +78,27 @@ class MarketplaceIntegrationTest {
                 .andExpect(jsonPath("$.content[0].sellerCount").value(1));
         mvc.perform(get("/api/v1/catalog/products/" + slug)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.offers[0].availableQuantity").value(5));
+
+        String buyerRegister = "{\"displayName\":\"Test Buyer\",\"email\":\"buyer@example.com\",\"password\":\"A-Strong-Buyer-Passphrase-2026\"}";
+        MvcResult buyerResult = mvc.perform(post("/api/v1/auth/register").cookie(csrfCookie).header("X-CSRF-TOKEN", csrf).contentType(MediaType.APPLICATION_JSON).content(buyerRegister))
+                .andExpect(status().isCreated()).andReturn();
+        String buyerToken = mapper.readTree(buyerResult.getResponse().getContentAsString()).get("accessToken").asText();
+
+        String address = "{\"recipientName\":\"Test Buyer\",\"phone\":\"+919876543210\",\"addressLine1\":\"12 Sample Road\",\"addressLine2\":null,\"city\":\"Bengaluru\",\"state\":\"Karnataka\",\"postalCode\":\"560001\",\"country\":\"India\",\"defaultAddress\":true}";
+        MvcResult addressResult = mvc.perform(post("/api/v1/addresses").header("Authorization", "Bearer " + buyerToken).contentType(MediaType.APPLICATION_JSON).content(address))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.defaultAddress").value(true)).andReturn();
+        String addressId = mapper.readTree(addressResult.getResponse().getContentAsString()).get("id").asText();
+
+        String cartItem = "{\"listingId\":\"" + listingId + "\",\"quantity\":2}";
+        mvc.perform(post("/api/v1/cart/items").header("Authorization", "Bearer " + buyerToken).contentType(MediaType.APPLICATION_JSON).content(cartItem))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.itemCount").value(2)).andExpect(jsonPath("$.subtotalMinor").value(11999800));
+        mvc.perform(post("/api/v1/wishlist/products/" + productId).header("Authorization", "Bearer " + buyerToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].productId").value(productId));
+        String preview = "{\"addressId\":\"" + addressId + "\"}";
+        mvc.perform(post("/api/v1/checkout/preview").header("Authorization", "Bearer " + buyerToken).contentType(MediaType.APPLICATION_JSON).content(preview))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.paymentEnabled").value(false))
+                .andExpect(jsonPath("$.sellerOrders[0].items[0].quantity").value(2))
+                .andExpect(jsonPath("$.totalMinor").value(11999800));
     }
 
     private Cookie cookie(MvcResult result, String name) {

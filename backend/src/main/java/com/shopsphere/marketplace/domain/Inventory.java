@@ -15,4 +15,7 @@ public class Inventory {
  public Inventory(Listing listing,int availableQty){this.listing=listing;this.availableQty=availableQty;this.reservedQty=0;this.updatedAt=Instant.now();}
  public UUID getId(){return id;} public Listing getListing(){return listing;} public int getAvailableQty(){return availableQty;} public int getReservedQty(){return reservedQty;}
  public void adjustAvailable(int delta){if(availableQty+delta<0)throw new IllegalArgumentException("Available inventory cannot be negative");availableQty+=delta;updatedAt=Instant.now();}
+ public void reserve(int quantity){if(quantity<=0||availableQty<quantity)throw new IllegalArgumentException("Insufficient available stock");availableQty-=quantity;reservedQty+=quantity;updatedAt=Instant.now();}
+ public void release(int quantity){if(quantity<=0||reservedQty<quantity)throw new IllegalArgumentException("Invalid stock reservation release");reservedQty-=quantity;availableQty+=quantity;updatedAt=Instant.now();}
+ public void completeReservation(int quantity){if(quantity<=0||reservedQty<quantity)throw new IllegalArgumentException("Invalid stock reservation completion");reservedQty-=quantity;updatedAt=Instant.now();}
 }
