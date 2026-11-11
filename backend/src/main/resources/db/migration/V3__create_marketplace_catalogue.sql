@@ -133,6 +133,7 @@ CREATE TABLE listings (
  CONSTRAINT ck_listings_shipping CHECK (shipping_days_min >= 0 AND shipping_days_max >= shipping_days_min),
  CONSTRAINT ck_listings_return CHECK (return_window_days >= 0)
 );
+CREATE UNIQUE INDEX ux_listings_seller_sku_ci ON listings(seller_id, LOWER(seller_sku));
 CREATE INDEX idx_listings_product_status_price ON listings(product_id, listing_status, price_minor);
 CREATE INDEX idx_listings_seller_status ON listings(seller_id, listing_status);
 
