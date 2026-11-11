@@ -150,7 +150,7 @@ class MarketplaceIntegrationTest {
                 .andExpect(status().isNotFound());
         mvc.perform(post("/api/v1/reviews/" + reviewId + "/reports").header("Authorization", "Bearer " + sellerToken).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"reasonCode\":\"OTHER\",\"details\":\"Test report\"}"))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
         mvc.perform(post("/api/v1/reviews/" + reviewId + "/reports").header("Authorization", "Bearer " + sellerToken).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"reasonCode\":\"OTHER\",\"details\":\"Duplicate report\"}"))
                 .andExpect(status().isConflict());
@@ -162,13 +162,13 @@ class MarketplaceIntegrationTest {
         String reportId = mapper.readTree(reportQueue.getResponse().getContentAsString()).get("content").get(0).get("id").asText();
         mvc.perform(patch("/api/v1/admin/reviews/" + reviewId + "/moderation").header("Authorization", "Bearer " + adminToken).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"action\":\"HIDDEN\",\"reason\":\"Test moderation\"}"))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
         mvc.perform(get("/api/v1/products/" + slug + "/reviews")).andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(0));
         mvc.perform(get("/api/v1/catalog/products/" + slug)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.averageRating").value(org.hamcrest.Matchers.nullValue())).andExpect(jsonPath("$.reviewCount").value(0));
         mvc.perform(patch("/api/v1/admin/reviews/reports/" + reportId).header("Authorization", "Bearer " + adminToken).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"action\":\"ACTIONED\",\"note\":\"Review hidden\"}"))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
     }
 
     private Cookie cookie(MvcResult result, String name) {
