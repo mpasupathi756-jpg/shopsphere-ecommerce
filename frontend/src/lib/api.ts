@@ -87,3 +87,28 @@ export const adminApi = {
   approveListing: (id: string) => send<AdminListing>(`/admin/catalog/listings/${id}/approve`, { method: 'PATCH' }),
   rejectListing: (id: string, reason: string) => send<AdminListing>(`/admin/catalog/listings/${id}/reject`, { method: 'PATCH', body: JSON.stringify({ reason }) }),
 }
+
+export type Address = { id: string; recipientName: string; phone: string; addressLine1: string; addressLine2: string | null; city: string; state: string; postalCode: string; country: string; defaultAddress: boolean }
+export type CartItem = { id: string; listingId: string; productId: string; productTitle: string; productSlug: string; storeName: string; unitPriceMinor: number; currency: string; quantity: number; availableQuantity: number; lineTotalMinor: number }
+export type Cart = { items: CartItem[]; itemCount: number; subtotalMinor: number; currency: string }
+export type WishlistItem = { productId: string; title: string; slug: string; categoryName: string; startingPriceMinor: number; currency: string }
+export type CheckoutPreview = { shippingAddress: Address; sellerOrders: { sellerId: string; storeName: string; items: { listingId: string; productTitle: string; sellerSku: string; quantity: number; unitPriceMinor: number; lineTotalMinor: number; currency: string }[]; subtotalMinor: number; shippingMinor: number; totalMinor: number }[]; subtotalMinor: number; shippingMinor: number; discountMinor: number; totalMinor: number; currency: string; paymentEnabled: boolean; paymentNotice: string }
+export const cartApi = {
+  get: () => send<Cart>('/cart'),
+  add: (listingId: string, quantity = 1) => send<Cart>('/cart/items', { method: 'POST', body: JSON.stringify({ listingId, quantity }) }),
+  update: (id: string, quantity: number) => send<Cart>('/cart/items/' + id, { method: 'PATCH', body: JSON.stringify({ quantity }) }),
+  remove: (id: string) => send<Cart>('/cart/items/' + id, { method: 'DELETE' }),
+}
+export const wishlistApi = {
+  get: () => send<WishlistItem[]>('/wishlist'),
+  add: (productId: string) => send<WishlistItem[]>('/wishlist/products/' + productId, { method: 'POST' }),
+  remove: (productId: string) => send<WishlistItem[]>('/wishlist/products/' + productId, { method: 'DELETE' }),
+}
+export const addressApi = {
+  get: () => send<Address[]>('/addresses'),
+  create: (input: Omit<Address,'id'|'defaultAddress'> & { defaultAddress: boolean }) => send<Address>('/addresses', { method: 'POST', body: JSON.stringify(input) }),
+  setDefault: (id: string) => send<Address>('/addresses/' + id + '/default', { method: 'PATCH' }),
+}
+export const checkoutApi = {
+  preview: (addressId: string) => send<CheckoutPreview>('/checkout/preview', { method: 'POST', body: JSON.stringify({ addressId }) }),
+}
