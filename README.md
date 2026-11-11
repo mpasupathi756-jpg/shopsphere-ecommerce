@@ -5,9 +5,10 @@ Premium, AI-first multi-seller marketplace built as a modular monolith.
 ## Current delivery status
 
 - **Merged to main:** project foundation, customer identity, seller onboarding, product catalogue, seller listings, inventory, product discovery, cart, wishlist, product comparison and read-only multi-seller checkout preview.
-- **Phase 4 in development:** idempotent order creation, seller-specific order splits, inventory reservation and expiry, local mock payment, order history and seller fulfilment.
+- **Merged to main:** idempotent order creation, seller-specific order splits, inventory reservation and expiry, local mock payment, order history and seller fulfilment.
+- **Phase 5 in development:** provider-independent, authenticated, read-only shopping assistant tools for catalogue search, product detail, comparison and customer order lookup.
 - **Production payments:** disabled until a marketplace-capable provider and seller settlement model are selected and integrated.
-- **AI shopping assistant:** planned after core commerce workflows are stable.
+- **AI model provider:** not selected or configured yet; no customer data is sent to an external model.
 
 ## Technology stack
 
