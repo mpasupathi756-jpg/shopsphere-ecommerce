@@ -9,7 +9,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthContextValue>(() => ({ user, loading,
     async login(email, password) { setUser(await authApi.login({ email, password })) },
     async register(displayName, email, password) { setUser(await authApi.register({ displayName, email, password })) },
-    async logout() { await authApi.logout(); setUser(null) },
+    async logout() { try { await authApi.logout() } catch { /* clear local session even if the server is unreachable */ } finally { setUser(null) } },
   }), [user, loading])
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
