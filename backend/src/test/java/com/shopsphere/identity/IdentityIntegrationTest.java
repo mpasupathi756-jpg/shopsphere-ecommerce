@@ -25,6 +25,7 @@ class IdentityIntegrationTest {
     @Autowired ObjectMapper mapper;
 
     @Test void registersLogsInRotatesRefreshTokenAndEnforcesRoles() throws Exception {
+        mvc.perform(get("/api/v1/assistant/tools/orders")).andExpect(status().isUnauthorized());
         MvcResult csrfResult = mvc.perform(get("/api/v1/auth/csrf")).andExpect(status().isOk()).andReturn();
         Cookie csrfCookie = cookie(csrfResult, "shopsphere_csrf");
         assertNotNull(csrfCookie);
@@ -51,6 +52,8 @@ class IdentityIntegrationTest {
 
         mvc.perform(get("/api/v1/auth/me").header("Authorization", "Bearer " + secondAccess))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.email").value("customer@example.com"));
+        mvc.perform(get("/api/v1/assistant/tools/orders").header("Authorization", "Bearer " + secondAccess))
+                .andExpect(status().isOk()).andExpect(jsonPath("$").isArray());
         mvc.perform(get("/api/v1/admin/overview").header("Authorization", "Bearer " + secondAccess))
                 .andExpect(status().isForbidden());
 
