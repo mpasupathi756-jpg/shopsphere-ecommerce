@@ -17,3 +17,9 @@ spring:
     init:
       mode: always
       data-locations: classpath:data-test.sql
+app:
+  bootstrap:
+    admin:
+      email: admin@example.com
+      password: A-Strong-Admin-Passphrase-2026
+      display-name: Test Admin

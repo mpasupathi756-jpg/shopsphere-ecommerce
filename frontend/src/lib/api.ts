@@ -46,3 +46,44 @@ export const authApi = {
   async logout() { try { await send<void>('/auth/logout', { method: 'POST', body: '{}' }, false) } finally { setAccessToken(null); csrfToken = null; csrfFetchedAt = 0 } },
   async me() { return send<UserProfile>('/auth/me') },
 }
+
+export type Category = { id: string; name: string; slug: string; description: string | null; displayOrder: number }
+export type ProductCard = { id: string; title: string; slug: string; categoryName: string; brandName: string | null; startingPriceMinor: number; currency: string; sellerCount: number; primaryImageKey: string | null }
+export type ProductAttribute = { key: string; label: string; value: string; unit: string | null }
+export type ProductImage = { storageKey: string; altText: string; primary: boolean }
+export type ListingOffer = { listingId: string; sellerId: string; storeName: string; sellerSku: string; priceMinor: number; currency: string; condition: string; availableQuantity: number; shippingDaysMin: number; shippingDaysMax: number; returnWindowDays: number; warrantyText: string | null }
+export type ProductDetail = { id: string; title: string; slug: string; description: string; categoryName: string; brandName: string | null; attributes: ProductAttribute[]; images: ProductImage[]; offers: ListingOffer[] }
+export type ProductPage = { content: ProductCard[]; totalElements: number; totalPages: number; number: number; size: number }
+export type SellerApplication = { id: string; userId: string; storeName: string; legalName: string; businessEmail: string; phone: string; status: string; rejectionReason: string | null; submittedAt: string; reviewedAt: string | null }
+export type SellerProduct = { id: string; title: string; slug: string; categoryName: string; status: string; rejectionReason: string | null }
+export type SellerListing = { id: string; productId: string; productTitle: string; sellerSku: string; priceMinor: number; currency: string; status: string; availableQuantity: number }
+export type AdminListing = { id: string; productId: string; productTitle: string; sellerId: string; storeName: string; sellerSku: string; priceMinor: number; currency: string; status: string; availableQuantity: number; rejectionReason: string | null }
+export const catalogueApi = {
+  categories: () => send<Category[]>('/catalog/categories'),
+  search: (params: { q?: string; category?: string; brand?: string; page?: number; size?: number } = {}) => {
+    const query = new URLSearchParams()
+    Object.entries(params).forEach(([key, value]) => { if (value !== undefined && value !== '') query.set(key, String(value)) })
+    return send<ProductPage>(`/catalog/products?${query.toString()}`)
+  },
+  product: (slug: string) => send<ProductDetail>(`/catalog/products/${encodeURIComponent(slug)}`),
+}
+export const sellerApi = {
+  submitApplication: (input: { legalName: string; storeName: string; businessEmail: string; phone: string; businessAddress: string; gstin?: string }) => send<SellerApplication>('/seller-applications', { method: 'POST', body: JSON.stringify(input) }),
+  myApplication: () => send<SellerApplication>('/seller-applications/me'),
+  products: () => send<SellerProduct[]>('/seller/products'),
+  submitProduct: (input: { categoryId: string; brandId?: string | null; title: string; description: string }) => send<SellerProduct>('/seller/products', { method: 'POST', body: JSON.stringify(input) }),
+  listings: () => send<SellerListing[]>('/seller/listings'),
+  createListing: (input: { productId: string; sellerSku: string; priceMinor: number; currency: 'INR'; condition: 'NEW' | 'REFURBISHED' | 'USED'; shippingDaysMin: number; shippingDaysMax: number; returnWindowDays: number; warrantyText?: string; availableQuantity: number }) => send<SellerListing>('/seller/listings', { method: 'POST', body: JSON.stringify(input) }),
+  pauseListing: (id: string) => send<SellerListing>(`/seller/listings/${id}/pause`, { method: 'PATCH' }),
+}
+export const adminApi = {
+  sellers: (status = 'PENDING_REVIEW') => send<SellerApplication[]>(`/admin/sellers?status=${status}`),
+  approveSeller: (id: string) => send<SellerApplication>(`/admin/sellers/${id}/approve`, { method: 'PATCH' }),
+  rejectSeller: (id: string, reason: string) => send<SellerApplication>(`/admin/sellers/${id}/reject`, { method: 'PATCH', body: JSON.stringify({ reason }) }),
+  pendingProducts: () => send<SellerProduct[]>('/admin/catalog/products/pending'),
+  approveProduct: (id: string) => send<SellerProduct>(`/admin/catalog/products/${id}/approve`, { method: 'PATCH' }),
+  rejectProduct: (id: string, reason: string) => send<SellerProduct>(`/admin/catalog/products/${id}/reject`, { method: 'PATCH', body: JSON.stringify({ reason }) }),
+  pendingListings: () => send<AdminListing[]>('/admin/catalog/listings/pending'),
+  approveListing: (id: string) => send<AdminListing>(`/admin/catalog/listings/${id}/approve`, { method: 'PATCH' }),
+  rejectListing: (id: string, reason: string) => send<AdminListing>(`/admin/catalog/listings/${id}/reject`, { method: 'PATCH', body: JSON.stringify({ reason }) }),
+}

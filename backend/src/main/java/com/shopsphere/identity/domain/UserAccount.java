@@ -19,5 +19,5 @@ public class UserAccount {
  protected UserAccount() {}
  public UserAccount(String email,String passwordHash,String displayName,Role role){this.email=email;this.passwordHash=passwordHash;this.displayName=displayName;this.roles.add(role);}
  @PrePersist void onCreate(){createdAt=Instant.now();updatedAt=createdAt;} @PreUpdate void onUpdate(){updatedAt=Instant.now();}
- public UUID getId(){return id;} public String getEmail(){return email;} public String getPasswordHash(){return passwordHash;} public String getDisplayName(){return displayName;} public String getAccountStatus(){return accountStatus;} public boolean isEmailVerified(){return emailVerified;} public Instant getCreatedAt(){return createdAt;} public Set<Role> getRoles(){return Set.copyOf(roles);} public boolean isActive(){return "ACTIVE".equals(accountStatus);}
+ public UUID getId(){return id;} public String getEmail(){return email;} public String getPasswordHash(){return passwordHash;} public String getDisplayName(){return displayName;} public String getAccountStatus(){return accountStatus;} public boolean isEmailVerified(){return emailVerified;} public Instant getCreatedAt(){return createdAt;} public Set<Role> getRoles(){return Set.copyOf(roles);} public boolean isActive(){return "ACTIVE".equals(accountStatus);} public void assignRole(Role role){this.roles.add(role);}
 }

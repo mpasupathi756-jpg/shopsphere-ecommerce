@@ -26,6 +26,11 @@ app:
     refresh:
       ttl-days: ${JWT_REFRESH_TOKEN_TTL_DAYS:14}
       secure-cookie: ${REFRESH_COOKIE_SECURE:false}
+  bootstrap:
+    admin:
+      email: ${ADMIN_BOOTSTRAP_EMAIL:}
+      password: ${ADMIN_BOOTSTRAP_PASSWORD:}
+      display-name: ${ADMIN_BOOTSTRAP_DISPLAY_NAME:ShopSphere Administrator}
 management:
   endpoints.web.exposure.include: health,info
   endpoint.health.probes.enabled: true
