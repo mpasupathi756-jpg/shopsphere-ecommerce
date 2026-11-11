@@ -20,6 +20,8 @@ server:
   port: ${SERVER_PORT:8080}
 app:
   frontend-origin: ${FRONTEND_ORIGIN:http://localhost:5173}
+  orders:
+    expiry-scan-ms: ${APP_ORDERS_EXPIRY_SCAN_MS:60000}
   security:
     jwt:
       issuer: ${JWT_ISSUER:shopsphere}
