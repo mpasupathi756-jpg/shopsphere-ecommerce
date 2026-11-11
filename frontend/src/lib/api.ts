@@ -79,6 +79,13 @@ export const reviewsApi = {
   remove: (id: string) => send<void>(`/me/reviews/${id}`, { method: 'DELETE' }),
   report: (id: string, input: { reasonCode: string; details?: string }) => send<void>(`/reviews/${id}/reports`, { method: 'POST', body: JSON.stringify(input) }),
 }
+export type ReviewReport = { id: string; reviewId: string; productTitle: string; reviewTitle: string; reporterName: string; reasonCode: string; details: string | null; status: string; createdAt: string }
+export type ReviewReportPage = { content: ReviewReport[]; totalElements: number; totalPages: number; number: number; size: number }
+export const adminReviewsApi = {
+  reports: () => send<ReviewReportPage>('/admin/reviews/reports?page=0&size=20'),
+  moderate: (reviewId: string, action: 'HIDDEN' | 'PUBLISHED' | 'REMOVED', reason: string) => send<void>(`/admin/reviews/${reviewId}/moderation`, { method: 'PATCH', body: JSON.stringify({ action, reason }) }),
+  resolve: (reportId: string, action: 'DISMISSED' | 'ACTIONED', note?: string) => send<void>(`/admin/reviews/reports/${reportId}`, { method: 'PATCH', body: JSON.stringify({ action, note }) }),
+}
 export const sellerApi = {
   submitApplication: (input: { legalName: string; storeName: string; businessEmail: string; phone: string; businessAddress: string; gstin?: string }) => send<SellerApplication>('/seller-applications', { method: 'POST', body: JSON.stringify(input) }),
   myApplication: () => send<SellerApplication>('/seller-applications/me'),
