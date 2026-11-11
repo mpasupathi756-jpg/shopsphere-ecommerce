@@ -2,7 +2,7 @@
 
 ## Current implementation
 
-Phase 5 now has a local Ollama-backed, one-turn conversational endpoint built with Spring AI 1.1.8. Spring AI 1.1.x supports this repository's Spring Boot 3.5.x baseline.
+Phase 5 now has a local Ollama-backed, one-turn conversational endpoint built with Spring AI 1.1.8 and an authenticated React chat page at `/assistant`. Spring AI 1.1.x supports this repository's Spring Boot 3.5.x baseline.
 
 - `POST /api/v1/assistant/chat` — authenticated one-turn chat; request body contains a message (1–1000 characters).
 - Default local model: `qwen2.5:3b`.
