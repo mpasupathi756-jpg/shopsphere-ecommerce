@@ -20,7 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles("test")
+@ActiveProfiles({"test","local"})
 class MarketplaceIntegrationTest {
     private static final String CATEGORY_ID = "00000000-0000-0000-0000-000000000001";
     @Autowired MockMvc mvc;
@@ -99,6 +99,29 @@ class MarketplaceIntegrationTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.paymentEnabled").value(false))
                 .andExpect(jsonPath("$.sellerOrders[0].items[0].quantity").value(2))
                 .andExpect(jsonPath("$.totalMinor").value(11999800));
+
+        MvcResult orderResult = mvc.perform(post("/api/v1/checkout/orders").header("Authorization", "Bearer " + buyerToken).header("Idempotency-Key", "buyer-checkout-001").contentType(MediaType.APPLICATION_JSON).content(preview))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("PAYMENT_PENDING"))
+                .andExpect(jsonPath("$.paymentProvider").value("MOCK")).andExpect(jsonPath("$.paymentStatus").value("PENDING")).andReturn();
+        String orderNumber = mapper.readTree(orderResult.getResponse().getContentAsString()).get("orderNumber").asText();
+        mvc.perform(post("/api/v1/checkout/orders").header("Authorization", "Bearer " + buyerToken).header("Idempotency-Key", "buyer-checkout-001").contentType(MediaType.APPLICATION_JSON).content(preview))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.orderNumber").value(orderNumber));
+        mvc.perform(post("/api/v1/payments/mock/" + orderNumber + "/success").header("Authorization", "Bearer " + buyerToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("PAID"));
+        MvcResult sellerOrdersResult = mvc.perform(get("/api/v1/seller/orders").header("Authorization", "Bearer " + sellerToken))
+                .andExpect(status().isOk()).andReturn();
+        String sellerOrderId = mapper.readTree(sellerOrdersResult.getResponse().getContentAsString()).get(0).get("sellerOrderId").asText();
+        mvc.perform(patch("/api/v1/seller/orders/" + sellerOrderId + "/processing").header("Authorization", "Bearer " + sellerToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("PROCESSING"));
+        String shipment = "{\\"carrier\\":\\"Test Express\\",\\"trackingNumber\\":\\"TRACK-0001\\"}";
+        mvc.perform(patch("/api/v1/seller/orders/" + sellerOrderId + "/ship").header("Authorization", "Bearer " + sellerToken).contentType(MediaType.APPLICATION_JSON).content(shipment))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("SHIPPED"));
+        mvc.perform(patch("/api/v1/seller/orders/" + sellerOrderId + "/delivered").header("Authorization", "Bearer " + sellerToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("DELIVERED"));
+        mvc.perform(get("/api/v1/orders/" + orderNumber).header("Authorization", "Bearer " + buyerToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("DELIVERED"));
+        mvc.perform(get("/api/v1/catalog/products/" + slug)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.offers[0].availableQuantity").value(3));
     }
 
     private Cookie cookie(MvcResult result, String name) {
