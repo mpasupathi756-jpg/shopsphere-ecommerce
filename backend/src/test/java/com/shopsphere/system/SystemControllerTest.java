@@ -18,6 +18,6 @@ class SystemControllerTest {
   mockMvc.perform(get("/api/v1/system/info")).andExpect(status().isOk())
    .andExpect(jsonPath("$.application").value("ShopSphere"))
    .andExpect(jsonPath("$.status").value("RUNNING"))
-   .andExpect(jsonPath("$.milestone").value("PHASE_4_ORDER_LIFECYCLE"));
+   .andExpect(jsonPath("$.milestone").value("PHASE_5_ASSISTANT_TOOL_BOUNDARY"));
  }
 }
