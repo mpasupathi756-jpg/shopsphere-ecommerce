@@ -7,7 +7,7 @@ Premium, AI-first multi-seller marketplace built as a modular monolith.
 - **Merged to main:** project foundation, customer identity, seller onboarding, product catalogue, seller listings, inventory, product discovery, cart, wishlist, product comparison and read-only multi-seller checkout preview.
 - **Merged to main:** idempotent order creation, seller-specific order splits, inventory reservation and expiry, local mock payment, order history and seller fulfilment.
 - **Merged to main (Phase 5):** authenticated Spring AI shopping assistant with local Ollama model integration, read-only catalogue/order tools and a React chat page. Local Ollama runtime/tool-calling verification on the developer computer is still pending.
-- **Phase 6 in progress:** verified-purchase product reviews and ratings. Design baseline is in docs/architecture/product-reviews-ratings.md; implementation is not complete.
+- **Phase 6 in progress:** verified-purchase product reviews and ratings. The V6 schema, backend APIs, published-rating aggregates, product review UI, customer review management, admin report queue and integration coverage are implemented on the Phase 6 feature branch. CI validation is pending; do not merge until backend tests and PostgreSQL schema validation pass.
 - **Production payments:** disabled until a marketplace-capable provider and seller settlement model are selected and integrated.
 - **AI model provider:** Ollama is the local development provider (Qwen 2.5 3B default). Production AI hosting is undecided; no external model API key is configured.
 
