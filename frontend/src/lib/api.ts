@@ -109,6 +109,20 @@ export const addressApi = {
   create: (input: Omit<Address,'id'|'defaultAddress'> & { defaultAddress: boolean }) => send<Address>('/addresses', { method: 'POST', body: JSON.stringify(input) }),
   setDefault: (id: string) => send<Address>('/addresses/' + id + '/default', { method: 'PATCH' }),
 }
+
+export type CheckoutOrder = { orderNumber: string; status: string; subtotalMinor: number; shippingMinor: number; totalMinor: number; paymentProvider: string; paymentStatus: string; checkoutUrl: string | null; expiresAt: string }
+export type OrderSummary = { orderNumber: string; status: string; totalMinor: number; currency: string; createdAt: string; sellerOrderCount: number }
+export type OrderLine = { productTitle: string; sellerSku: string; quantity: number; unitPriceMinor: number; lineTotalMinor: number; currency: string }
+export type SellerOrder = { sellerOrderId: string; orderNumber: string; storeName: string; status: string; subtotalMinor: number; totalMinor: number; carrier: string | null; trackingNumber: string | null; items: OrderLine[] }
+export type OrderDetail = { orderNumber: string; status: string; subtotalMinor: number; shippingMinor: number; totalMinor: number; currency: string; recipientName: string; phone: string; addressLine1: string; addressLine2: string | null; city: string; state: string; postalCode: string; country: string; createdAt: string; sellerOrders: SellerOrder[] }
 export const checkoutApi = {
   preview: (addressId: string) => send<CheckoutPreview>('/checkout/preview', { method: 'POST', body: JSON.stringify({ addressId }) }),
+  placeOrder: (addressId: string, idempotencyKey: string) => send<CheckoutOrder>('/checkout/orders', { method: 'POST', headers: { 'Idempotency-Key': idempotencyKey }, body: JSON.stringify({ addressId }) }),
+}
+export const paymentApi = {
+  mockSuccess: (orderNumber: string) => send<OrderDetail>('/payments/mock/' + encodeURIComponent(orderNumber) + '/success', { method: 'POST' }),
+}
+export const ordersApi = {
+  list: () => send<OrderSummary[]>('/orders'),
+  detail: (orderNumber: string) => send<OrderDetail>('/orders/' + encodeURIComponent(orderNumber)),
 }
