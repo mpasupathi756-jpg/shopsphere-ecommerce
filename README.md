@@ -6,7 +6,7 @@ Premium, AI-first multi-seller marketplace built as a modular monolith.
 
 - **Merged to main:** project foundation, customer identity, seller onboarding, product catalogue, seller listings, inventory, product discovery, cart, wishlist, product comparison and read-only multi-seller checkout preview.
 - **Merged to main:** idempotent order creation, seller-specific order splits, inventory reservation and expiry, local mock payment, order history and seller fulfilment.
-- **Phase 5 in development:** authenticated Spring AI shopping assistant with local Ollama model and read-only catalogue/order tools.
+- **Phase 5 in development:** authenticated Spring AI shopping assistant with local Ollama model, read-only catalogue/order tools and a React chat page.
 - **Production payments:** disabled until a marketplace-capable provider and seller settlement model are selected and integrated.
 - **AI model provider:** not selected or configured yet; no customer data is sent to an external model.
 
