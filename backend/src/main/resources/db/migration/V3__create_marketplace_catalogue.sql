@@ -39,6 +39,7 @@ CREATE TABLE sellers (
  CONSTRAINT ck_sellers_gstin CHECK (gstin IS NULL OR gstin ~ '^[0-9A-Z]{15}$')
 );
 CREATE INDEX idx_sellers_status_submitted ON sellers(status, submitted_at DESC);
+CREATE UNIQUE INDEX ux_sellers_gstin ON sellers(gstin) WHERE gstin IS NOT NULL;
 
 CREATE TABLE seller_documents (
  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -65,6 +66,7 @@ CREATE TABLE products (
  slug VARCHAR(200) NOT NULL UNIQUE,
  description TEXT NOT NULL,
  product_status VARCHAR(24) NOT NULL DEFAULT 'PENDING_REVIEW',
+ rejection_reason VARCHAR(500),
  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
  updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
  CONSTRAINT ck_products_status CHECK (product_status IN ('PENDING_REVIEW','ACTIVE','REJECTED','ARCHIVED'))
@@ -115,6 +117,7 @@ CREATE TABLE listings (
  currency CHAR(3) NOT NULL DEFAULT 'INR',
  item_condition VARCHAR(20) NOT NULL DEFAULT 'NEW',
  listing_status VARCHAR(24) NOT NULL DEFAULT 'PENDING_REVIEW',
+ rejection_reason VARCHAR(500),
  shipping_days_min SMALLINT NOT NULL DEFAULT 2,
  shipping_days_max SMALLINT NOT NULL DEFAULT 7,
  return_window_days SMALLINT NOT NULL DEFAULT 7,
