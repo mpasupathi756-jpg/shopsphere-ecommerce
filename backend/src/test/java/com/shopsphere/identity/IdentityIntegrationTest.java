@@ -55,7 +55,7 @@ class IdentityIntegrationTest {
                 .andExpect(status().isOk()).andReturn();
         JsonNode refreshedBody = mapper.readTree(refreshed.getResponse().getContentAsString());
         String secondAccess = refreshedBody.get("accessToken").asText();
-        Cookie secondRefresh = refreshed.getResponse().getCookie("shopsphere_refresh");
+        Cookie secondRefresh = cookie(refreshed, "shopsphere_refresh");
         assertNotEquals(firstAccess, secondAccess);
         assertNotNull(secondRefresh);
         assertNotEquals(firstRefresh.getValue(), secondRefresh.getValue());
