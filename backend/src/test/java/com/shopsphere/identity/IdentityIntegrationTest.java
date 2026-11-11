@@ -37,7 +37,7 @@ class IdentityIntegrationTest {
 
     @Test void registersCustomerRotatesRefreshTokenAndAuthenticatesProfile() throws Exception {
         MvcResult csrfResult = mvc.perform(get("/api/v1/auth/csrf")).andExpect(status().isOk()).andReturn();
-        Cookie csrfCookie = csrfResult.getResponse().getCookie("shopsphere_csrf");
+        Cookie csrfCookie = cookie(csrfResult, "shopsphere_csrf");
         assertNotNull(csrfCookie);
         String csrf = mapper.readTree(csrfResult.getResponse().getContentAsString()).get("csrfToken").asText();
         assertEquals(csrfCookie.getValue(), csrf);
@@ -47,9 +47,9 @@ class IdentityIntegrationTest {
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.user.roles[0]").value("CUSTOMER")).andReturn();
         JsonNode registrationBody = mapper.readTree(registered.getResponse().getContentAsString());
         String firstAccess = registrationBody.get("accessToken").asText();
-        Cookie firstRefresh = registered.getResponse().getCookie("shopsphere_refresh");
+        Cookie firstRefresh = cookie(registered, "shopsphere_refresh");
         assertNotNull(firstRefresh);
-        assertTrue(firstRefresh.isHttpOnly());
+        assertTrue(setCookieHeader(registered, "shopsphere_refresh").contains("HttpOnly"));
 
         MvcResult refreshed = mvc.perform(post("/api/v1/auth/refresh").cookie(csrfCookie, firstRefresh).header("X-CSRF-TOKEN", csrf).contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isOk()).andReturn();
@@ -67,5 +67,16 @@ class IdentityIntegrationTest {
 
         mvc.perform(post("/api/v1/auth/refresh").cookie(csrfCookie, firstRefresh).header("X-CSRF-TOKEN", csrf).contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    private Cookie cookie(MvcResult result, String name) {
+        String header = setCookieHeader(result, name);
+        if (header == null) return null;
+        String value = header.substring(name.length() + 1).split(";", 2)[0];
+        return new Cookie(name, value);
+    }
+    private String setCookieHeader(MvcResult result, String name) {
+        return result.getResponse().getHeaders("Set-Cookie").stream()
+                .filter(header -> header.startsWith(name + "=")).findFirst().orElse(null);
     }
 }
