@@ -130,3 +130,8 @@ export const ordersApi = {
   list: () => send<OrderSummary[]>('/orders'),
   detail: (orderNumber: string) => send<OrderDetail>('/orders/' + encodeURIComponent(orderNumber)),
 }
+
+export type AssistantChatResponse = { answer: string; model: string }
+export const assistantApi = {
+  chat: (message: string) => send<AssistantChatResponse>('/assistant/chat', { method: 'POST', body: JSON.stringify({ message }) }),
+}
