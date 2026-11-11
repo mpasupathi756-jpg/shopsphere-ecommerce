@@ -8,5 +8,5 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/system")
 public class SystemController {
  @GetMapping("/info")
- public Map<String,Object> info() { return Map.of("application","ShopSphere","status","RUNNING","milestone","PHASE_0_FOUNDATION","timestamp",Instant.now().toString()); }
+ public Map<String,Object> info() { return Map.of("application","ShopSphere","status","RUNNING","milestone","PHASE_4_ORDER_LIFECYCLE","timestamp",Instant.now().toString()); }
 }
