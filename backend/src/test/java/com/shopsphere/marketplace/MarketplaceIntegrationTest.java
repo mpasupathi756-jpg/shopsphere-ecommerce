@@ -1,0 +1,87 @@
+package com.shopsphere.marketplace;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.Cookie;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
+class MarketplaceIntegrationTest {
+    private static final String CATEGORY_ID = "00000000-0000-0000-0000-000000000001";
+    @Autowired MockMvc mvc;
+    @Autowired ObjectMapper mapper;
+
+    @Test void customerCanApplySellerListProductAndPublishOfferAfterModeration() throws Exception {
+        MvcResult csrfResult = mvc.perform(get("/api/v1/auth/csrf")).andExpect(status().isOk()).andReturn();
+        Cookie csrfCookie = cookie(csrfResult, "shopsphere_csrf");
+        String csrf = mapper.readTree(csrfResult.getResponse().getContentAsString()).get("csrfToken").asText();
+
+        String register = "{\"displayName\":\"Marketplace Seller\",\"email\":\"seller@example.com\",\"password\":\"A-Strong-Seller-Passphrase-2026\"}";
+        MvcResult registered = mvc.perform(post("/api/v1/auth/register").cookie(csrfCookie).header("X-CSRF-TOKEN", csrf).contentType(MediaType.APPLICATION_JSON).content(register))
+                .andExpect(status().isCreated()).andReturn();
+        JsonNode registeredBody = mapper.readTree(registered.getResponse().getContentAsString());
+        String customerToken = registeredBody.get("accessToken").asText();
+        Cookie refreshCookie = cookie(registered, "shopsphere_refresh");
+
+        String application = "{\"legalName\":\"Seller Private Limited\",\"storeName\":\"Clear Choice Store\",\"businessEmail\":\"business@example.com\",\"phone\":\"+919876543210\",\"businessAddress\":\"Bengaluru, Karnataka, India\",\"gstin\":null}";
+        MvcResult submitted = mvc.perform(post("/api/v1/seller-applications").header("Authorization", "Bearer " + customerToken).contentType(MediaType.APPLICATION_JSON).content(application))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.status").value("PENDING_REVIEW")).andReturn();
+        String sellerId = mapper.readTree(submitted.getResponse().getContentAsString()).get("id").asText();
+        mvc.perform(get("/api/v1/seller-applications/me").header("Authorization", "Bearer " + customerToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.id").value(sellerId));
+
+        String adminLogin = "{\"email\":\"admin@example.com\",\"password\":\"A-Strong-Admin-Passphrase-2026\"}";
+        MvcResult adminResult = mvc.perform(post("/api/v1/auth/login").cookie(csrfCookie).header("X-CSRF-TOKEN", csrf).contentType(MediaType.APPLICATION_JSON).content(adminLogin))
+                .andExpect(status().isOk()).andReturn();
+        String adminToken = mapper.readTree(adminResult.getResponse().getContentAsString()).get("accessToken").asText();
+        mvc.perform(patch("/api/v1/admin/sellers/" + sellerId + "/approve").header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("APPROVED"));
+
+        MvcResult refreshed = mvc.perform(post("/api/v1/auth/refresh").cookie(csrfCookie, refreshCookie).header("X-CSRF-TOKEN", csrf).contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isOk()).andReturn();
+        String sellerToken = mapper.readTree(refreshed.getResponse().getContentAsString()).get("accessToken").asText();
+
+        String product = "{\"categoryId\":\"" + CATEGORY_ID + "\",\"brandId\":null,\"title\":\"ThinkPad Coding Laptop\",\"description\":\"A reliable laptop for software development and everyday work.\"}";
+        MvcResult productResult = mvc.perform(post("/api/v1/seller/products").header("Authorization", "Bearer " + sellerToken).contentType(MediaType.APPLICATION_JSON).content(product))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("PENDING_REVIEW")).andReturn();
+        JsonNode productBody = mapper.readTree(productResult.getResponse().getContentAsString());
+        String productId = productBody.get("id").asText();
+        String slug = productBody.get("slug").asText();
+        mvc.perform(patch("/api/v1/admin/catalog/products/" + productId + "/approve").header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("ACTIVE"));
+
+        String listing = "{\"productId\":\"" + productId + "\",\"variantId\":null,\"sellerSku\":\"CLEAR-THINKPAD-001\",\"priceMinor\":5999900,\"currency\":\"INR\",\"condition\":\"NEW\",\"shippingDaysMin\":2,\"shippingDaysMax\":5,\"returnWindowDays\":7,\"warrantyText\":\"1 year manufacturer warranty\",\"availableQuantity\":5}";
+        MvcResult listingResult = mvc.perform(post("/api/v1/seller/listings").header("Authorization", "Bearer " + sellerToken).contentType(MediaType.APPLICATION_JSON).content(listing))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("PENDING_REVIEW")).andReturn();
+        String listingId = mapper.readTree(listingResult.getResponse().getContentAsString()).get("id").asText();
+        mvc.perform(patch("/api/v1/admin/catalog/listings/" + listingId + "/approve").header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("ACTIVE"));
+
+        mvc.perform(get("/api/v1/catalog/products").param("q", "ThinkPad"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.content[0].slug").value(slug))
+                .andExpect(jsonPath("$.content[0].startingPriceMinor").value(5999900))
+                .andExpect(jsonPath("$.content[0].sellerCount").value(1));
+        mvc.perform(get("/api/v1/catalog/products/" + slug)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.offers[0].availableQuantity").value(5));
+    }
+
+    private Cookie cookie(MvcResult result, String name) {
+        String header = result.getResponse().getHeaders("Set-Cookie").stream().filter(h -> h.startsWith(name + "=")).findFirst().orElseThrow();
+        return new Cookie(name, header.substring(name.length() + 1).split(";", 2)[0]);
+    }
+}
