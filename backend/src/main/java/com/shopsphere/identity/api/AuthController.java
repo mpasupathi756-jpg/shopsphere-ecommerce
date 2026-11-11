@@ -30,10 +30,12 @@ public class AuthController {
     private static final String CSRF_COOKIE = "shopsphere_csrf";
     private final AuthService auth;
     private final boolean secureCookie;
+    private final long refreshTtlDays;
     private final SecureRandom random = new SecureRandom();
 
-    public AuthController(AuthService auth, @Value("${app.security.refresh.secure-cookie:false}") boolean secureCookie) {
-        this.auth = auth; this.secureCookie = secureCookie;
+    public AuthController(AuthService auth, @Value("${app.security.refresh.secure-cookie:false}") boolean secureCookie,
+            @Value("${app.security.refresh.ttl-days:14}") long refreshTtlDays) {
+        this.auth = auth; this.secureCookie = secureCookie; this.refreshTtlDays = refreshTtlDays;
     }
 
     @GetMapping("/csrf")
