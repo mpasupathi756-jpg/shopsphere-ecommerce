@@ -96,7 +96,7 @@ class MarketplaceIntegrationTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0].productId").value(productId));
         String preview = "{\"addressId\":\"" + addressId + "\"}";
         mvc.perform(post("/api/v1/checkout/preview").header("Authorization", "Bearer " + buyerToken).contentType(MediaType.APPLICATION_JSON).content(preview))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.paymentEnabled").value(false))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.paymentEnabled").value(true))
                 .andExpect(jsonPath("$.sellerOrders[0].items[0].quantity").value(2))
                 .andExpect(jsonPath("$.totalMinor").value(11999800));
 
