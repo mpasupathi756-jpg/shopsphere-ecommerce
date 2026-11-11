@@ -119,3 +119,24 @@ Public product DTO:
 - Confirm exact delivered status and order-item relationship from the existing Phase 4 domain model before writing the eligibility query.
 - Confirm whether review deletion is soft-delete (REMOVED) or a separate DELETED status before API implementation.
 - No paid moderation service or external AI service is required for this phase.
+
+## Implementation update — 11 November 2026
+
+Implemented on the Phase 6 feature branch (validation is still in progress):
+
+- Flyway V6 creates product_reviews and product_review_reports with foreign keys, rating/status/reason constraints, unique customer/product and reporter/review constraints, and moderation/report queue indexes.
+- Review eligibility is derived server-side from a matching order item owned by the authenticated customer and a seller order in DELIVERED status. Customer IDs and order item IDs are not accepted from the review request.
+- Customer endpoints: public published-review listing, authenticated eligibility check, create, own-review list/edit/soft-remove, and report.
+- Admin endpoints: open report queue, hide/restore/remove with a mandatory reason, and report resolution. Admin routes are protected by the existing ADMIN role matcher.
+- Public catalogue card and detail DTOs include published-only averageRating and reviewCount.
+- Product detail UI includes rating summary, review pagination, delivered-purchase review form and verified-purchase labels. Account and admin navigation include review management screens.
+- Integration coverage added to the marketplace workflow for pre-delivery rejection, post-delivery acceptance, duplicate review rejection, rating aggregates, cross-user edit denial, duplicate report rejection, non-admin moderation denial and admin hide/report resolution.
+- CI run for the initial implementation found a Java escaping syntax error in the eligibility response. Fixed in commit 60918f41a90a6424defcbbeb03200b7eaa328abc; a fresh CI run is validating the corrected branch.
+- Do not merge until backend Maven tests and PostgreSQL 16 migration/Hibernate schema validation pass.
+
+## Current limitations / production gates
+
+- Review submission/report rate limiting and spam throttling must be configured before public production.
+- No automated AI moderation is enabled; administrators make moderation decisions.
+- Review text is rendered as normal escaped React text, never as raw HTML.
+- Seller replies and helpful votes remain deferred.
