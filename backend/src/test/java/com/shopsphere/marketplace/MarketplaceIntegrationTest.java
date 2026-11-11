@@ -113,7 +113,7 @@ class MarketplaceIntegrationTest {
         String sellerOrderId = mapper.readTree(sellerOrdersResult.getResponse().getContentAsString()).get(0).get("sellerOrderId").asText();
         mvc.perform(patch("/api/v1/seller/orders/" + sellerOrderId + "/processing").header("Authorization", "Bearer " + sellerToken))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("PROCESSING"));
-        String shipment = "{\\"carrier\\":\\"Test Express\\",\\"trackingNumber\\":\\"TRACK-0001\\"}";
+        String shipment = "{\"carrier\":\"Test Express\",\"trackingNumber\":\"TRACK-0001\"}";
         mvc.perform(patch("/api/v1/seller/orders/" + sellerOrderId + "/ship").header("Authorization", "Bearer " + sellerToken).contentType(MediaType.APPLICATION_JSON).content(shipment))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("SHIPPED"));
         mvc.perform(patch("/api/v1/seller/orders/" + sellerOrderId + "/delivered").header("Authorization", "Bearer " + sellerToken))
