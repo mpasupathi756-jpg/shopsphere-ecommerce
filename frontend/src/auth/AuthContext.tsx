@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { authApi, restoreSession, type UserProfile } from '../lib/api'
-type AuthContextValue = { user: UserProfile | null; loading: boolean; login: (email: string, password: string) => Promise<void>; register: (displayName: string, email: string, password: string) => Promise<void>; logout: () => Promise<void> }
+type AuthContextValue = { user: UserProfile | null; loading: boolean; refresh: () => Promise<void>; login: (email: string, password: string) => Promise<void>; register: (displayName: string, email: string, password: string) => Promise<void>; logout: () => Promise<void> }
 const AuthContext = createContext<AuthContextValue | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null)
