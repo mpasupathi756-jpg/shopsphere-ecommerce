@@ -6,9 +6,10 @@ Premium, AI-first multi-seller marketplace built as a modular monolith.
 
 - **Merged to main:** project foundation, customer identity, seller onboarding, product catalogue, seller listings, inventory, product discovery, cart, wishlist, product comparison and read-only multi-seller checkout preview.
 - **Merged to main:** idempotent order creation, seller-specific order splits, inventory reservation and expiry, local mock payment, order history and seller fulfilment.
-- **Phase 5 in development:** authenticated Spring AI shopping assistant with local Ollama model, read-only catalogue/order tools and a React chat page.
+- **Merged to main (Phase 5):** authenticated Spring AI shopping assistant with local Ollama model integration, read-only catalogue/order tools and a React chat page. Local Ollama runtime/tool-calling verification on the developer computer is still pending.
+- **Phase 6 in progress:** verified-purchase product reviews and ratings. Design baseline is in docs/architecture/product-reviews-ratings.md; implementation is not complete.
 - **Production payments:** disabled until a marketplace-capable provider and seller settlement model are selected and integrated.
-- **AI model provider:** not selected or configured yet; no customer data is sent to an external model.
+- **AI model provider:** Ollama is the local development provider (Qwen 2.5 3B default). Production AI hosting is undecided; no external model API key is configured.
 
 ## Technology stack
 
@@ -68,6 +69,10 @@ The default local profile enables a mock payment flow for development and automa
 Non-local profiles use an unconfigured payment gateway that rejects order creation. Production must explicitly set SPRING_PROFILES_ACTIVE=prod, configure a supported Indian marketplace payment provider, seller settlement, signed webhooks, refunds and reconciliation, and set REFRESH_COOKIE_SECURE=true. Until these are implemented and reviewed, real customer payments must remain disabled.
 
 Pending mock payment orders expire after 15 minutes by default and release their stock reservations. APP_ORDERS_EXPIRY_SCAN_MS controls the expiry scan interval.
+
+## AI assistant safety
+
+The Phase 5 assistant uses the local Ollama service in development. It exposes bounded, read-only catalogue and authenticated customer-order tools. The model has no SQL/repository access, arbitrary URL fetching, cart/order writes, payments, cancellation, seller or admin actions. Do not expose a developer's localhost Ollama service publicly. Production model hosting, rate limiting, persistent chat history and privacy/retention controls remain open production work.
 
 ## CI
 
