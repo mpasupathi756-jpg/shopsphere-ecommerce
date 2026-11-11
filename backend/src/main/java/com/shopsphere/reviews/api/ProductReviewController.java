@@ -11,6 +11,7 @@ public class ProductReviewController {
  private final ProductReviewService service;
  public ProductReviewController(ProductReviewService service){this.service=service;}
  @GetMapping("/products/{slug}/reviews") public Page<ReviewResponse> list(@PathVariable String slug,@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="10") int size){return service.publicReviews(slug,page,size);}
+ @GetMapping("/products/{slug}/reviews/eligibility") public ReviewEligibilityResponse eligibility(@AuthenticationPrincipal Jwt jwt,@PathVariable String slug){return service.eligibility(UUID.fromString(jwt.getSubject()),slug);}
  @PostMapping("/products/{slug}/reviews") public ReviewResponse create(@AuthenticationPrincipal Jwt jwt,@PathVariable String slug,@Valid @RequestBody ReviewRequest request){return service.create(UUID.fromString(jwt.getSubject()),slug,request);}
  @GetMapping("/me/reviews") public Page<ReviewResponse> mine(@AuthenticationPrincipal Jwt jwt,@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="20") int size){return service.myReviews(UUID.fromString(jwt.getSubject()),page,size);}
  @PatchMapping("/me/reviews/{reviewId}") public ReviewResponse edit(@AuthenticationPrincipal Jwt jwt,@PathVariable UUID reviewId,@Valid @RequestBody ReviewRequest request){return service.edit(UUID.fromString(jwt.getSubject()),reviewId,request);}
