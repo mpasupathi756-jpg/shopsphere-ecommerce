@@ -75,6 +75,10 @@ export const sellerApi = {
   listings: () => send<SellerListing[]>('/seller/listings'),
   createListing: (input: { productId: string; sellerSku: string; priceMinor: number; currency: 'INR'; condition: 'NEW' | 'REFURBISHED' | 'USED'; shippingDaysMin: number; shippingDaysMax: number; returnWindowDays: number; warrantyText?: string; availableQuantity: number }) => send<SellerListing>('/seller/listings', { method: 'POST', body: JSON.stringify(input) }),
   pauseListing: (id: string) => send<SellerListing>(`/seller/listings/${id}/pause`, { method: 'PATCH' }),
+  orders: () => send<SellerOrder[]>('/seller/orders'),
+  startProcessing: (id: string) => send<SellerOrder>(`/seller/orders/${encodeURIComponent(id)}/processing`, { method: 'PATCH' }),
+  shipOrder: (id: string, carrier: string, trackingNumber: string) => send<SellerOrder>(`/seller/orders/${encodeURIComponent(id)}/ship`, { method: 'PATCH', body: JSON.stringify({ carrier, trackingNumber }) }),
+  markDelivered: (id: string) => send<SellerOrder>(`/seller/orders/${encodeURIComponent(id)}/delivered`, { method: 'PATCH' }),
 }
 export const adminApi = {
   sellers: (status = 'PENDING_REVIEW') => send<SellerApplication[]>(`/admin/sellers?status=${status}`),
