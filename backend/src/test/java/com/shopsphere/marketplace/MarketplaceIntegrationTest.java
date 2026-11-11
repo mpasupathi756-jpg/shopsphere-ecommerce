@@ -126,6 +126,43 @@ class MarketplaceIntegrationTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("DELIVERED"));
         mvc.perform(get("/api/v1/catalog/products/" + slug)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.offers[0].availableQuantity").value(3));
+        mvc.perform(get("/api/v1/products/" + slug + "/reviews/eligibility").header("Authorization", "Bearer " + buyerToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.eligible").value(false));
+        mvc.perform(post("/api/v1/products/" + slug + "/reviews").header("Authorization", "Bearer " + buyerToken).contentType(MediaType.APPLICATION_JSON)
+                .content("{\\"rating\\":5,\\"title\\":\\"Great laptop\\",\\"body\\":\\"Fast and reliable for development.\\"}"))
+                .andExpect(status().isForbidden());
+
+        mvc.perform(get("/api/v1/products/" + slug + "/reviews/eligibility").header("Authorization", "Bearer " + buyerToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.eligible").value(true));
+        MvcResult reviewResult = mvc.perform(post("/api/v1/products/" + slug + "/reviews").header("Authorization", "Bearer " + buyerToken).contentType(MediaType.APPLICATION_JSON)
+                .content("{\\"rating\\":5,\\"title\\":\\"Great laptop\\",\\"body\\":\\"Fast and reliable for development.\\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.verifiedPurchase").value(true)).andExpect(jsonPath("$.rating").value(5)).andReturn();
+        String reviewId = mapper.readTree(reviewResult.getResponse().getContentAsString()).get("id").asText();
+        mvc.perform(post("/api/v1/products/" + slug + "/reviews").header("Authorization", "Bearer " + buyerToken).contentType(MediaType.APPLICATION_JSON)
+                .content("{\\"rating\\":4,\\"title\\":\\"Duplicate\\",\\"body\\":\\"Duplicate review.\\"}"))
+                .andExpect(status().isConflict());
+        mvc.perform(get("/api/v1/products/" + slug + "/reviews")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1)).andExpect(jsonPath("$.content[0].authorName").value("Test Buyer"));
+        mvc.perform(get("/api/v1/catalog/products/" + slug)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.averageRating").value(5.0)).andExpect(jsonPath("$.reviewCount").value(1));
+        mvc.perform(patch("/api/v1/me/reviews/" + reviewId).header("Authorization", "Bearer " + sellerToken).contentType(MediaType.APPLICATION_JSON)
+                .content("{\\"rating\\":1,\\"title\\":\\"Hijack\\",\\"body\\":\\"Not my review.\\"}"))
+                .andExpect(status().isNotFound());
+        mvc.perform(post("/api/v1/reviews/" + reviewId + "/reports").header("Authorization", "Bearer " + sellerToken).contentType(MediaType.APPLICATION_JSON)
+                .content("{\\"reasonCode\\":\\"OTHER\\",\\"details\\":\\"Test report\\"}"))
+                .andExpect(status().isOk());
+        MvcResult reportQueue = mvc.perform(get("/api/v1/admin/reviews/reports").header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(1)).andReturn();
+        String reportId = mapper.readTree(reportQueue.getResponse().getContentAsString()).get("content").get(0).get("id").asText();
+        mvc.perform(patch("/api/v1/admin/reviews/" + reviewId + "/moderation").header("Authorization", "Bearer " + adminToken).contentType(MediaType.APPLICATION_JSON)
+                .content("{\\"action\\":\\"HIDDEN\\",\\"reason\\":\\"Test moderation\\"}"))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/v1/products/" + slug + "/reviews")).andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(0));
+        mvc.perform(get("/api/v1/catalog/products/" + slug)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.averageRating").doesNotExist()).andExpect(jsonPath("$.reviewCount").value(0));
+        mvc.perform(patch("/api/v1/admin/reviews/reports/" + reportId).header("Authorization", "Bearer " + adminToken).contentType(MediaType.APPLICATION_JSON)
+                .content("{\\"action\\":\\"ACTIONED\\",\\"note\\":\\"Review hidden\\"}"))
+                .andExpect(status().isOk());
     }
 
     private Cookie cookie(MvcResult result, String name) {
