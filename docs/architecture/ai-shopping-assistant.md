@@ -32,7 +32,7 @@ The HTTP tool endpoints remain available under `/api/v1/assistant/tools` for dir
 - All model tools are read-only. No cart writes, checkout, payments, cancellations, seller/admin actions or arbitrary URL fetches are exposed.
 - Search is bounded; comparison accepts only 2–4 distinct slugs.
 - Model output is never authorization. Any future write operation requires a separate explicit user confirmation and backend validation.
-- Prompts are limited to 1000 characters. Rate limiting and persistent conversation history are not implemented yet.
+- Prompts are limited to 1000 characters. Rate limiting and persistent conversation history are not implemented yet; these are production-readiness enhancements, not part of the Phase 5 local runtime acceptance check.
 
 ## Privacy and deployment
 
@@ -40,10 +40,9 @@ The initial development provider is Ollama running locally. With a local Ollama 
 
 Do not expose a developer's localhost Ollama service to the public internet. Production model hosting/provider, access controls, network path, privacy terms, rate limits, retention and cost must be reviewed before deployment. No model API key or production AI service has been provisioned.
 
-## Next steps
+## Phase 5 acceptance checks still pending
 
-1. Run the assistant locally with Ollama and verify model tool calling end to end.
-2. Add endpoint tests for unauthenticated access and cross-customer order isolation.
-3. Add rate limiting, conversation persistence and safe observability that excludes sensitive prompt/order content.
-4. Build the React assistant chat interface and loading/error states.
-5. Evaluate production model hosting/provider and deployment security before enabling the assistant in production.
+1. Run the assistant locally with Ollama and `qwen2.5:3b`; verify model tool calling end to end for product search, product comparison and customer order retrieval.
+2. Verify unauthenticated chat requests are rejected and cross-customer order access is impossible against a running local stack.
+
+The React `/assistant` interface and typed API client are implemented and merged. Rate limiting, persistent conversation storage/retention, privacy-safe observability and production model hosting are separate production-readiness enhancements. Do not expose a local Ollama service publicly.
