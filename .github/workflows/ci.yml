@@ -25,6 +25,20 @@ jobs:
       - run: npm run build
   backend:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: shopsphere
+          POSTGRES_USER: shopsphere
+          POSTGRES_PASSWORD: shopsphere
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U shopsphere -d shopsphere"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -34,3 +48,28 @@ jobs:
           cache: maven
       - run: mvn -B verify
         working-directory: backend
+      - name: Verify PostgreSQL migrations and Hibernate mappings
+        working-directory: backend
+        env:
+          DB_URL: jdbc:postgresql://localhost:5432/shopsphere
+          DB_USERNAME: shopsphere
+          DB_PASSWORD: shopsphere
+        run: |
+          set -euo pipefail
+          mvn -B spring-boot:run > /tmp/shopsphere-postgres-smoke.log 2>&1 &
+          APP_PID=$!
+          trap 'kill "$APP_PID" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://localhost:8080/actuator/health > /tmp/shopsphere-health.json; then
+              cat /tmp/shopsphere-health.json
+              exit 0
+            fi
+            if ! kill -0 "$APP_PID" 2>/dev/null; then
+              cat /tmp/shopsphere-postgres-smoke.log
+              exit 1
+            fi
+            sleep 2
+          done
+          cat /tmp/shopsphere-postgres-smoke.log
+          echo "Application did not become healthy against PostgreSQL"
+          exit 1
