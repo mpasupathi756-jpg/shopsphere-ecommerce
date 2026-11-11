@@ -1,38 +1,49 @@
-# AI shopping assistant — safe tool boundary
+# AI shopping assistant
 
-## Phase 5 implementation status
+## Current implementation
 
-This phase starts with a provider-independent application tool layer. The HTTP endpoints are useful for frontend integration and establish the exact backend operations that a future Spring AI model adapter may call. This is not yet a conversational model integration.
+Phase 5 now has a local Ollama-backed, one-turn conversational endpoint built with Spring AI 1.1.8. Spring AI 1.1.x supports this repository's Spring Boot 3.5.x baseline.
 
-## Available read-only tools
+- `POST /api/v1/assistant/chat` — authenticated one-turn chat; request body contains a message (1–1000 characters).
+- Default local model: `qwen2.5:3b`.
+- Ollama endpoint: `http://localhost:11434` by default.
+- Override with `OLLAMA_BASE_URL` and `OLLAMA_MODEL`.
+- Ollama does not automatically download the model at application startup. Install Ollama and pull the configured model separately.
 
-All endpoints are under `/api/v1/assistant/tools` and require an authenticated session, except catalogue data is also available through the existing public catalogue API.
+## Model tools
 
-- `GET /products?q=...&category=...&brand=...&page=0&size=8` — bounded catalogue search.
-- `GET /products/{slug}` — active product details and seller offers.
-- `POST /products/compare` — compare 2–4 distinct product slugs.
-- `GET /orders` — order history for the authenticated customer.
-- `GET /orders/{orderNumber}` — one order belonging to the authenticated customer.
+The model receives only these read-only tools for each request:
+
+- `searchProducts` — active catalogue search, maximum 5 products.
+- `getProductDetails` — product details and active seller offers.
+- `compareProducts` — compare 2–4 active products.
+- `getMyOrders` — the signed-in customer's order list.
+- `getMyOrder` — details of one order belonging to the signed-in customer.
+
+The HTTP tool endpoints remain available under `/api/v1/assistant/tools` for direct frontend use and testing.
 
 ## Security boundaries
 
-- Customer identity is derived from the verified JWT subject; clients cannot supply another user's ID.
+- Both chat and tool endpoints require authentication.
+- Customer identity is derived from the verified JWT subject, not from model arguments or request body fields.
+- Customer-order tools are instantiated per chat request with the authenticated customer's ID. The ID is not part of the model-visible tool schema.
 - Order lookup delegates to the existing customer-scoped order query service.
-- The tool layer delegates to catalogue and order services; it does not expose repositories or persistence entities.
-- Search results are bounded to at most 8 products per page and page numbers 0–100.
-- Comparison accepts only 2–4 distinct product slugs.
-- All operations are read-only. There are no cart writes, checkout, payment, seller/admin actions, SQL tools or arbitrary URL fetch tools.
-- Model output must never be treated as authorization. Future write operations require a separate explicit user confirmation and backend validation.
+- The tool layer delegates to catalogue and order services; it does not expose repositories, persistence entities, SQL or arbitrary database access.
+- All model tools are read-only. No cart writes, checkout, payments, cancellations, seller/admin actions or arbitrary URL fetches are exposed.
+- Search is bounded; comparison accepts only 2–4 distinct slugs.
+- Model output is never authorization. Any future write operation requires a separate explicit user confirmation and backend validation.
+- Prompts are limited to 1000 characters. Rate limiting and persistent conversation history are not implemented yet.
 
-## Model provider decision
+## Privacy and deployment
 
-No external provider has been selected or configured. Keep the orchestration/provider boundary independent until privacy, cost, deployment and data-retention requirements are reviewed. No API key is committed and no customer prompt or order data is sent to a model provider by this implementation.
+The initial development provider is Ollama running locally. With a local Ollama instance, prompts and retrieved catalogue/order tool results stay on the local machine rather than being sent to a hosted model API. This is a development default, not a production deployment configuration.
 
-## Next implementation steps
+Do not expose a developer's localhost Ollama service to the public internet. Production model hosting/provider, access controls, network path, privacy terms, rate limits, retention and cost must be reviewed before deployment. No model API key or production AI service has been provisioned.
 
-1. Add Spring AI behind an explicit provider adapter and configuration flag.
-2. Expose only these read-only operations as model tools, with strict argument validation.
-3. Add conversation endpoint, rate limits, request-size limits and safe error handling.
-4. Add tests for cross-customer order access, invalid comparison inputs, and bounded search.
-5. Build the React assistant UI with clear disclosure that answers are based on current catalogue/order data.
-6. Only then evaluate a model provider and deployment configuration.
+## Next steps
+
+1. Run the assistant locally with Ollama and verify model tool calling end to end.
+2. Add endpoint tests for unauthenticated access and cross-customer order isolation.
+3. Add rate limiting, conversation persistence and safe observability that excludes sensitive prompt/order content.
+4. Build the React assistant chat interface and loading/error states.
+5. Evaluate production model hosting/provider and deployment security before enabling the assistant in production.
