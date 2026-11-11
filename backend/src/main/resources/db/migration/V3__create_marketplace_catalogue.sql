@@ -114,7 +114,7 @@ CREATE TABLE listings (
  seller_id UUID NOT NULL REFERENCES sellers(id) ON DELETE RESTRICT,
  seller_sku VARCHAR(100) NOT NULL,
  price_minor BIGINT NOT NULL,
- currency CHAR(3) NOT NULL DEFAULT 'INR',
+ currency VARCHAR(3) NOT NULL DEFAULT 'INR',
  item_condition VARCHAR(20) NOT NULL DEFAULT 'NEW',
  listing_status VARCHAR(24) NOT NULL DEFAULT 'PENDING_REVIEW',
  rejection_reason VARCHAR(500),
