@@ -31,7 +31,7 @@ public class ProductReviewService {
   activeUser(customerId); Product product=activeProduct(slug);
   boolean already=reviews.existsByCustomer_IdAndProduct_Id(customerId,product.getId());
   boolean delivered=!orderItems.findDeliveredPurchaseForReview(customerId,slug).isEmpty();
-  return new ReviewEligibilityResponse(delivered&&!already,already,already?\"You have already reviewed this product\":delivered?\"You can review this delivered purchase\":\"A delivered purchase is required before reviewing\");
+  return new ReviewEligibilityResponse(delivered&&!already,already,already?"You have already reviewed this product":delivered?"You can review this delivered purchase":"A delivered purchase is required before reviewing");
  }
  @Transactional
  public ReviewResponse create(UUID customerId,String slug,ReviewRequest request){
