@@ -1,6 +1,6 @@
 # Phase 6 — Product Reviews & Ratings
 
-Status: In progress — design baseline. This document defines the implementation contract; it does not claim the feature is implemented.
+Status: Implemented on Phase 6 branch; CI run 43017417327 passed frontend typecheck/build, backend Maven verification and PostgreSQL 16 Flyway/Hibernate schema validation. Awaiting PR #8 merge.
 
 ## Goals
 Let customers share useful product feedback after a genuine completed purchase. Keep review eligibility, ownership, aggregation, reporting and moderation under backend control.
