@@ -1,0 +1,2 @@
+# Third-party notices
+No third-party application source code or assets have been copied into this repository at this stage. Before adopting external code, record its repository, exact commit, licence, affected files, modifications and attribution requirements. Reference repositories in the Notion blueprint are research references only unless a compatible licence is verified.
