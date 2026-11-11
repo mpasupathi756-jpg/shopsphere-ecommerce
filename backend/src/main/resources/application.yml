@@ -23,7 +23,7 @@ app:
   security:
     jwt:
       issuer: ${JWT_ISSUER:shopsphere}
-      secret-base64: ${JWT_SECRET_BASE64:U2hvcFNwaGVyZUxvY2FsRGV2ZWxvcG1lbnRLZXlGb3JKd3QyNTY=}
+      secret-base64: ${JWT_SECRET_BASE64:}
       access-ttl-minutes: ${JWT_ACCESS_TOKEN_TTL_MINUTES:15}
     refresh:
       ttl-days: ${JWT_REFRESH_TOKEN_TTL_DAYS:14}
