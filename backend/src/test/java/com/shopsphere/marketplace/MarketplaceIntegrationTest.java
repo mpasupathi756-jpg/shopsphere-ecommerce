@@ -151,6 +151,12 @@ class MarketplaceIntegrationTest {
         mvc.perform(post("/api/v1/reviews/" + reviewId + "/reports").header("Authorization", "Bearer " + sellerToken).contentType(MediaType.APPLICATION_JSON)
                 .content("{\\"reasonCode\\":\\"OTHER\\",\\"details\\":\\"Test report\\"}"))
                 .andExpect(status().isOk());
+        mvc.perform(post("/api/v1/reviews/" + reviewId + "/reports").header("Authorization", "Bearer " + sellerToken).contentType(MediaType.APPLICATION_JSON)
+                .content("{\\"reasonCode\\":\\"OTHER\\",\\"details\\":\\"Duplicate report\\"}"))
+                .andExpect(status().isConflict());
+        mvc.perform(patch("/api/v1/admin/reviews/" + reviewId + "/moderation").header("Authorization", "Bearer " + buyerToken).contentType(MediaType.APPLICATION_JSON)
+                .content("{\\"action\\":\\"HIDDEN\\",\\"reason\\":\\"Customer cannot moderate\\"}"))
+                .andExpect(status().isForbidden());
         MvcResult reportQueue = mvc.perform(get("/api/v1/admin/reviews/reports").header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(1)).andReturn();
         String reportId = mapper.readTree(reportQueue.getResponse().getContentAsString()).get("content").get(0).get("id").asText();
@@ -159,7 +165,7 @@ class MarketplaceIntegrationTest {
                 .andExpect(status().isOk());
         mvc.perform(get("/api/v1/products/" + slug + "/reviews")).andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(0));
         mvc.perform(get("/api/v1/catalog/products/" + slug)).andExpect(status().isOk())
-                .andExpect(jsonPath("$.averageRating").doesNotExist()).andExpect(jsonPath("$.reviewCount").value(0));
+                .andExpect(jsonPath("$.averageRating").value(org.hamcrest.Matchers.nullValue())).andExpect(jsonPath("$.reviewCount").value(0));
         mvc.perform(patch("/api/v1/admin/reviews/reports/" + reportId).header("Authorization", "Bearer " + adminToken).contentType(MediaType.APPLICATION_JSON)
                 .content("{\\"action\\":\\"ACTIONED\\",\\"note\\":\\"Review hidden\\"}"))
                 .andExpect(status().isOk());
