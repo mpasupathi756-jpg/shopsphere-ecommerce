@@ -6,9 +6,9 @@ Premium, AI-first multi-seller marketplace built as a modular monolith.
 
 - **Merged to main:** project foundation, customer identity, seller onboarding, product catalogue, seller listings, inventory, product discovery, cart, wishlist, product comparison and read-only multi-seller checkout preview.
 - **Merged to main:** idempotent order creation, seller-specific order splits, inventory reservation and expiry, local mock payment, order history and seller fulfilment.
-- **Phase 5 in development:** authenticated Spring AI shopping assistant with local Ollama model, read-only catalogue/order tools and a React chat page.
+- **Phase 5 merged to main:** authenticated Spring AI shopping assistant with local Ollama/Qwen 2.5 3B, read-only catalogue/order tools and a React chat page. Local Ollama end-to-end runtime verification remains pending.
 - **Production payments:** disabled until a marketplace-capable provider and seller settlement model are selected and integrated.
-- **AI model provider:** not selected or configured yet; no customer data is sent to an external model.
+- **AI model provider:** local Ollama is the development default; no external model API is configured. Production model hosting remains undecided.
 
 ## Technology stack
 
@@ -60,6 +60,18 @@ npm run dev
 - OpenAPI UI: http://localhost:8080/swagger-ui.html
 
 All schema changes must use Flyway migrations. Never commit real credentials.
+
+## Local AI assistant (Phase 5)
+
+1. Install Ollama from https://ollama.com/download and start the Ollama service.
+2. Pull the configured model: `ollama pull qwen2.5:3b`.
+3. Confirm the model is available: `ollama list` and verify `qwen2.5:3b` appears.
+4. Start PostgreSQL, backend and frontend using the local setup above.
+5. Sign in as a customer and open http://localhost:5173/assistant.
+6. Test catalogue search, comparison of 2–4 products, own order list and own order detail. Also test the chat endpoint while signed out (must reject) and verify one customer cannot retrieve another customer's orders.
+7. Keep Ollama bound to localhost; do not expose port 11434 publicly.
+
+The assistant endpoint uses `OLLAMA_BASE_URL` (default `http://localhost:11434`) and `OLLAMA_MODEL` (default `qwen2.5:3b`). The model is not downloaded automatically by Spring Boot. Phase 5 is not end-to-end verified until these local runtime and authorization checks pass.
 
 ## Local payment safety
 
