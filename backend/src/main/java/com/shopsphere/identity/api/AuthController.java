@@ -96,7 +96,7 @@ public class AuthController {
         }
     }
     private void setRefreshCookie(HttpServletResponse response, String token) {
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie(REFRESH_COOKIE, token, true, 14L * 24 * 60 * 60).toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie(REFRESH_COOKIE, token, true, refreshTtlDays * 24 * 60 * 60).toString());
     }
     private ResponseCookie cookie(String name, String value, boolean httpOnly, long maxAgeSeconds) {
         return ResponseCookie.from(name, value).httpOnly(httpOnly).secure(secureCookie)
