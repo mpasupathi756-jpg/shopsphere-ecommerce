@@ -11,6 +11,7 @@ import com.shopsphere.reviews.domain.*;
 import com.shopsphere.reviews.repository.*;
 import java.util.*;
 import org.springframework.data.domain.*;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,7 +39,7 @@ public class ProductReviewService {
   Product product=activeProduct(slug);
   if(reviews.existsByCustomer_IdAndProduct_Id(customerId,product.getId()))throw new ResponseStatusException(HttpStatus.CONFLICT,"You have already reviewed this product");
   OrderItem purchase=orderItems.findDeliveredPurchaseForReview(customerId,slug).stream().findFirst().orElseThrow(()->new ResponseStatusException(HttpStatus.FORBIDDEN,"A delivered purchase of this product is required before reviewing"));
-  return response(reviews.save(new ProductReview(product,customer,purchase,request.rating(),clean(request.title()),clean(request.body()))));
+  try{return response(reviews.saveAndFlush(new ProductReview(product,customer,purchase,request.rating(),clean(request.title()),clean(request.body()))));}catch(DataIntegrityViolationException e){throw new ResponseStatusException(HttpStatus.CONFLICT,"You have already reviewed this product");}
  }
 
  @Transactional(readOnly=true)
@@ -71,7 +72,7 @@ public class ProductReviewService {
   if(review.getCustomer().getId().equals(reporterId))throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"You cannot report your own review");
   if(!"PUBLISHED".equals(review.getStatus()))throw new ResponseStatusException(HttpStatus.CONFLICT,"Only published reviews can be reported");
   if(reports.existsByReview_IdAndReporter_Id(reviewId,reporterId))throw new ResponseStatusException(HttpStatus.CONFLICT,"You have already reported this review");
-  reports.save(new ProductReviewReport(review,reporter,request.reasonCode(),blankToNull(request.details())));
+  try{reports.saveAndFlush(new ProductReviewReport(review,reporter,request.reasonCode(),blankToNull(request.details())));}catch(DataIntegrityViolationException e){throw new ResponseStatusException(HttpStatus.CONFLICT,"You have already reported this review");}
  }
  @Transactional(readOnly=true)
  public Page<ReviewReportResponse> reportQueue(int page,int size){
