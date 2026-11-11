@@ -1,0 +1,14 @@
+server:
+  forward-headers-strategy: framework
+  error:
+    include-message: never
+app:
+  security:
+    refresh:
+      secure-cookie: ${REFRESH_COOKIE_SECURE:true}
+management:
+  endpoints.web.exposure.include: health
+  endpoint.health.show-details: never
+springdoc:
+  api-docs.enabled: false
+  swagger-ui.enabled: false
