@@ -17,7 +17,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
  @Bean SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
   return http.csrf(AbstractHttpConfigurer::disable).cors(c -> {}).sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-   .authorizeHttpRequests(a -> a.requestMatchers("/actuator/health","/actuator/info","/swagger-ui/**","/v3/api-docs/**").permitAll().requestMatchers(HttpMethod.OPTIONS,"/**").permitAll().requestMatchers(HttpMethod.GET,"/api/v1/system/info").permitAll().anyRequest().denyAll()).build();
+   .authorizeHttpRequests(a -> a.requestMatchers("/actuator/health","/actuator/info","/swagger-ui.html","/swagger-ui/**","/v3/api-docs/**").permitAll().requestMatchers(HttpMethod.OPTIONS,"/**").permitAll().requestMatchers(HttpMethod.GET,"/api/v1/system/info").permitAll().anyRequest().denyAll()).build();
  }
  @Bean PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
  @Bean CorsConfigurationSource corsConfigurationSource(@Value("${app.frontend-origin:http://localhost:5173}") String origins) {
