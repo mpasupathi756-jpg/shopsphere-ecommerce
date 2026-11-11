@@ -104,6 +104,10 @@ class MarketplaceIntegrationTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("PAYMENT_PENDING"))
                 .andExpect(jsonPath("$.paymentProvider").value("MOCK")).andExpect(jsonPath("$.paymentStatus").value("PENDING")).andReturn();
         String orderNumber = mapper.readTree(orderResult.getResponse().getContentAsString()).get("orderNumber").asText();
+        mvc.perform(get("/api/v1/catalog/products/" + slug)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.offers[0].availableQuantity").value(3));
+        mvc.perform(get("/api/v1/orders").header("Authorization", "Bearer " + buyerToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(1));
         mvc.perform(post("/api/v1/checkout/orders").header("Authorization", "Bearer " + buyerToken).header("Idempotency-Key", "buyer-checkout-001").contentType(MediaType.APPLICATION_JSON).content(preview))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.orderNumber").value(orderNumber));
         mvc.perform(post("/api/v1/payments/mock/" + orderNumber + "/success").header("Authorization", "Bearer " + buyerToken))
