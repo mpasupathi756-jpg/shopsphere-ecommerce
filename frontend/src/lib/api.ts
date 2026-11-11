@@ -48,11 +48,11 @@ export const authApi = {
 }
 
 export type Category = { id: string; name: string; slug: string; description: string | null; displayOrder: number }
-export type ProductCard = { id: string; title: string; slug: string; categoryName: string; brandName: string | null; startingPriceMinor: number; currency: string; sellerCount: number; primaryImageKey: string | null }
+export type ProductCard = { id: string; title: string; slug: string; categoryName: string; brandName: string | null; startingPriceMinor: number; currency: string; sellerCount: number; primaryImageKey: string | null; averageRating: number | null; reviewCount: number }
 export type ProductAttribute = { key: string; label: string; value: string; unit: string | null }
 export type ProductImage = { storageKey: string; altText: string; primary: boolean }
 export type ListingOffer = { listingId: string; sellerId: string; storeName: string; sellerSku: string; priceMinor: number; currency: string; condition: string; availableQuantity: number; shippingDaysMin: number; shippingDaysMax: number; returnWindowDays: number; warrantyText: string | null }
-export type ProductDetail = { id: string; title: string; slug: string; description: string; categoryName: string; brandName: string | null; attributes: ProductAttribute[]; images: ProductImage[]; offers: ListingOffer[] }
+export type ProductDetail = { id: string; title: string; slug: string; description: string; categoryName: string; brandName: string | null; attributes: ProductAttribute[]; images: ProductImage[]; offers: ListingOffer[]; averageRating: number | null; reviewCount: number }
 export type ProductPage = { content: ProductCard[]; totalElements: number; totalPages: number; number: number; size: number }
 export type SellerApplication = { id: string; userId: string; storeName: string; legalName: string; businessEmail: string; phone: string; status: string; rejectionReason: string | null; submittedAt: string; reviewedAt: string | null }
 export type SellerProduct = { id: string; title: string; slug: string; categoryName: string; status: string; rejectionReason: string | null }
@@ -66,6 +66,18 @@ export const catalogueApi = {
     return send<ProductPage>(`/catalog/products?${query.toString()}`)
   },
   product: (slug: string) => send<ProductDetail>(`/catalog/products/${encodeURIComponent(slug)}`),
+}
+export type ProductReview = { id: string; productSlug: string; authorName: string; rating: number; title: string; body: string; verifiedPurchase: boolean; createdAt: string }
+export type ReviewPage = { content: ProductReview[]; totalElements: number; totalPages: number; number: number; size: number }
+export type ReviewEligibility = { eligible: boolean; alreadyReviewed: boolean; message: string }
+export const reviewsApi = {
+  list: (slug: string, page = 0) => send<ReviewPage>(`/products/${encodeURIComponent(slug)}/reviews?page=${page}&size=10`),
+  eligibility: (slug: string) => send<ReviewEligibility>(`/products/${encodeURIComponent(slug)}/reviews/eligibility`),
+  create: (slug: string, input: { rating: number; title: string; body: string }) => send<ProductReview>(`/products/${encodeURIComponent(slug)}/reviews`, { method: 'POST', body: JSON.stringify(input) }),
+  mine: (page = 0) => send<ReviewPage>(`/me/reviews?page=${page}&size=20`),
+  edit: (id: string, input: { rating: number; title: string; body: string }) => send<ProductReview>(`/me/reviews/${id}`, { method: 'PATCH', body: JSON.stringify(input) }),
+  remove: (id: string) => send<void>(`/me/reviews/${id}`, { method: 'DELETE' }),
+  report: (id: string, input: { reasonCode: string; details?: string }) => send<void>(`/reviews/${id}/reports`, { method: 'POST', body: JSON.stringify(input) }),
 }
 export const sellerApi = {
   submitApplication: (input: { legalName: string; storeName: string; businessEmail: string; phone: string; businessAddress: string; gstin?: string }) => send<SellerApplication>('/seller-applications', { method: 'POST', body: JSON.stringify(input) }),
