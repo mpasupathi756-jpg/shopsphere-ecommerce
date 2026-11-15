@@ -6,6 +6,12 @@ app:
   security:
     refresh:
       secure-cookie: ${REFRESH_COOKIE_SECURE:true}
+spring:
+  flyway:
+    # Supabase schema was provisioned from the repository migrations before the API deploy.
+    # Baseline at V6 so Flyway does not attempt to recreate those existing tables.
+    baseline-on-migrate: true
+    baseline-version: 6
 management:
   endpoints.web.exposure.include: health
   endpoint.health.show-details: never
